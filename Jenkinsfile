@@ -76,8 +76,15 @@ pipeline {
     steps {
         script {
             def mvn = tool 'Default Maven'
-            withSonarQubeEnv() {
-                sh "${mvn}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application'"
+            withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                withSonarQubeEnv('sonarqube') {
+                    sh """
+                        ${mvn}/bin/mvn clean verify sonar:sonar \
+                        -Dsonar.projectKey=numeric-application \
+                        -Dsonar.projectName='numeric-application' \
+                        -Dsonar.token=${SONAR_TOKEN}
+                    """
+                }
             }
         }
     }
