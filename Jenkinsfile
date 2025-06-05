@@ -73,11 +73,15 @@ pipeline {
  //    }
 
       stage('SonarQube Analysis') {
-        def mvn = tool 'Default Maven';
-        withSonarQubeEnv() {
-          sh "${mvn}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application'"
+    steps {
+        script {
+            def mvn = tool 'Default Maven'
+            withSonarQubeEnv() {
+                sh "${mvn}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application'"
+            }
         }
-      }
+    }
+}
 
     stage('Vulnerability Scan - Docker') {
         steps {
