@@ -1,5 +1,3 @@
-@Library('slack') _
-
 
 /////// ******************************* Code for fectching Failed Stage Name ******************************* ///////
 import io.jenkins.blueocean.rest.impl.pipeline.PipelineNodeGraphVisitor
