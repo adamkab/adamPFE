@@ -74,7 +74,7 @@ pipeline {
 
     stage('SonarQube - SAST') {
       steps {
-        withSonarQubeEnv('SonarQube') {
+        
           def mvn = tool 'Default Maven';
 		      withSonarQubeEnv() {
 		        sh "${mvn}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application'"
@@ -86,7 +86,7 @@ pipeline {
         }
       }
     }
-
+    
     stage('Vulnerability Scan - Docker') {
         steps {
           parallel(
