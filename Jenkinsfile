@@ -90,15 +90,31 @@ pipeline {
     }
 }
 
-    stage('Vulnerability Scan - dependency-check') {
-        steps {   
-              sh "mvn dependency-check:check"
-        }
-      }
+   stage('Vulnerability Scan - dependency-check') {
+    steps {   
+        sh "mvn dependency-check:check"
+        publishHTML([
+            allowMissing: false,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: 'target',
+            reportFiles: 'dependency-check-report.html',
+            reportName: 'Dependency Check Report'
+        ])
+    }
+}
 
       stage('docker scan - trivy'){
         steps{
           sh "bash trivy-docker-image-scan.sh"
+          publishHTML([
+              allowMissing: false,
+              alwaysLinkToLastBuild: true,
+              keepAll: true,
+              reportDir: '.',
+              reportFiles: 'TrivyReport.html',
+              reportName: 'Trivy Security Report'
+          ])
         }
       }
     
