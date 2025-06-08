@@ -119,39 +119,48 @@ pipeline {
 
 
 
-    stage('K8S Deployment ') {
-      steps {
+    stage('K8S Deployment') {
+    steps {
         parallel(
-          "Deployment": {
-            withKubeConfig([credentialsId: 'kubeconfig']) {
-              sh "bash k8s-deployment.sh"
+            "Deployment": {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    script {
+                        // Remplacer l'image dans le fichier YAML
+                        sh """
+                            sed -i "s#replace#${imageName}#g" k8s_deployment_service.yaml
+                            
+                            # Appliquer le deployment
+                            kubectl -n default apply -f k8s_deployment_service.yaml
+                            
+                            echo "Deployment appliqué avec l'image: ${imageName}"
+                        """
+                    }
+                }
+            },
+            "Rollout Status": {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
+                    script {
+                        // Attendre avant de vérifier le status
+                        sh """
+                            echo "Attente de 60 secondes pour le déploiement..."
+                            sleep 60
+                            
+                            # Vérifier le status du rollout
+                            if kubectl -n default rollout status deploy ${deploymentName} --timeout=5s | grep -q "successfully rolled out"; then
+                                echo "Deployment ${deploymentName} Rollout is Success"
+                            else
+                                echo "Deployment ${deploymentName} Rollout has Failed"
+                                kubectl -n default rollout undo deploy ${deploymentName}
+                                exit 1
+                            fi
+                        """
+                    }
+                }
             }
-          },
-          "Rollout Status": {
-            withKubeConfig([credentialsId: 'kubeconfig']) {
-              sh "bash k8s-deployment-rollout-status.sh"
-            }
-          }
         )
-      }
     }
+}
 
-    // stage('Integration Tests ') {
-    //   steps {
-    //     script {
-    //       try {
-    //         withKubeConfig([credentialsId: 'kubeconfig']) {
-    //           sh "bash integration-test.sh"
-    //         }
-    //       } catch (e) {
-    //         withKubeConfig([credentialsId: 'kubeconfig']) {
-    //           sh "kubectl -n default rollout undo deploy ${deploymentName}"
-    //         }
-    //         throw e
-    //       }
-    //     }
-    //   }
-    // }
 
    stage('OWASP ZAP - DAST') {
       steps {
@@ -171,81 +180,7 @@ pipeline {
       
     }
 
-    // stage('Prompte to PROD?') {
-    //   steps {
-    //     timeout(time: 2, unit: 'DAYS') {
-    //       input 'Do you want to Approve the Deployment to Production Environment/Namespace?'
-    //     }
-    //   }
-    // }
-
- //    stage('K8S CIS Benchmark') {
- //      steps {
- //        script {
-
- //          parallel(
- //            "Master": {
- //              sh "bash cis-master.sh"
- //            },
- //            "Etcd": {
- //              sh "bash cis-etcd.sh"
- //            },
- //            "Kubelet": {
- //              sh "bash cis-kubelet.sh"
- //            }
- //          )
-
- //        }
- //      }
- //    }
-
- //    stage('K8S Deployment - PROD') {
- //      steps {
- //        parallel(
- //          "Deployment": {
- //            withKubeConfig([credentialsId: 'kubeconfig']) {
- //              sh "sed -i 's#replace#${imageName}#g' k8s_PROD-deployment_service.yaml"
- //              sh "kubectl -n prod apply -f k8s_PROD-deployment_service.yaml"
- //            }
- //          },
- //          "Rollout Status": {
- //            withKubeConfig([credentialsId: 'kubeconfig']) {
- //              sh "bash k8s-PROD-deployment-rollout-status.sh"
- //            }
- //          }
- //        )
- //      }
- //    }
-
- //    stage('Integration Tests - PROD') {
- //      steps {
- //        script {
- //          try {
- //            withKubeConfig([credentialsId: 'kubeconfig']) {
- //              sh "bash integration-test-PROD.sh"
- //            }
- //          } catch (e) {
- //            withKubeConfig([credentialsId: 'kubeconfig']) {
- //              sh "kubectl -n prod rollout undo deploy ${deploymentName}"
- //            }
- //            throw e
- //          }
- //        }
- //      }
- //    }   
-   
-  //     stage('Testing Slack - 1') {
-  //     steps {
-  //         sh 'exit 0'
-  //     }
-  //   }
-
-  //  stage('Testing Slack - Error Stage') {
-  //     steps {
-  //         sh 'exit 0'
-  //     }
-  //   }
-
+  
   }
 
   
